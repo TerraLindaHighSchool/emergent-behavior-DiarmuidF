@@ -11,6 +11,10 @@ public class Ant extends Creature
     private boolean carryingFood;
     private GreenfootImage image1;
     private GreenfootImage image2;
+    private final int MAX_PH_AVAILABLE = 16;
+    private final int TIME_FOLLOWING_TRAIL= 30;
+    private int phAvailable = MAX_PH_AVAILABLE;
+    private int followTrailTimeRemaining = 0;
     /**
      * Create an ant with a given home hill. The initial speed is zero (not moving).
      */
@@ -53,7 +57,22 @@ public class Ant extends Creature
     }
     private void searchForFood()
     {
-        randomWalk();
+        if(followTrailTimeRemaining ==0)
+        {
+            if (smellsPheromone())
+            {
+                walkTowardsPheromoneCenter();
+            }
+            else
+            {
+                randomWalk();
+            }
+        }
+        else
+        {
+            followTrailTimeRemaining--;
+            walkAwayFromHome();
+        }
         checkForFood();
     }
     private void status()
@@ -61,6 +80,7 @@ public class Ant extends Creature
         if(carryingFood)
         {
             walkTowardsHome();
+            handlePheromoneDrop();
             if(atHome())
             {
                 setImage(image1);
@@ -72,5 +92,40 @@ public class Ant extends Creature
         {
             searchForFood();
         }
+    }
+    private void handlePheromoneDrop()
+    {
+        if(phAvailable == MAX_PH_AVAILABLE)
+        {
+            Pheromone pheromone = new Pheromone();
+            getWorld().addObject(pheromone, getX(), getY());
+            phAvailable = 0;
+        }
+        else
+        {
+            phAvailable++;
+        }
+    }
+    private boolean smellsPheromone()
+    {
+        if(getOneIntersectingObject(Pheromone.class) !=null)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    private void walkTowardsPheromoneCenter()
+    {
+        if(getOneIntersectingObject(Pheromone.class) != null)
+        {
+            headTowards(this);
+            walk();
+            if (this.getX() == getX() && this.getY() == getY())
+            {
+                followTrailTimeRemaining = TIME_FOLLOWING_TRAIL ;
+            }
     }
 }
